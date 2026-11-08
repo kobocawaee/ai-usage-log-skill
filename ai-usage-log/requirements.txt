@@ -1,0 +1,4 @@
+openpyxl
+markdown-it-py
+playwright
+tzdata
