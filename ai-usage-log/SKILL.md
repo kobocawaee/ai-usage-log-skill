@@ -63,7 +63,12 @@ python "<skill>/scripts/setup_env.py"
 "<py>" "<skill>/scripts/find_sessions.py" --project "<proj>" --state "<proj>/<output_dir>/.ai-usage-log-state.json"
 ```
 
-把結果表格給使用者選（預設只列未處理的；`--all` 列全部）。
+把結果給使用者選（預設只列未處理的；`--all` 列全部）。
+
+**給使用者選的時候，主要顯示「標題」**（和 VS Code 對話清單看到的名稱相同），再附日期；
+不要只寫 session 編號或「N 次人工輸入」，一般人看不懂。例如：「Sports-center PRD 的 Epic 與 Story 清單（11/3）」。
+**排除目前這個對話本身**（標題通常像「/ai-usage-log …」、時間是現在），它是在執行本 skill，不是要記錄的內容。
+若使用者想整理的對話沒出現在清單，請他說出對話的標題或大約日期，不要讓他猜編號。
 
 ## 3. 解析
 

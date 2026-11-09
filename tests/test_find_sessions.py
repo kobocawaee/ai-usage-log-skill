@@ -35,6 +35,24 @@ def test_finds_only_this_project_by_cwd(tmp_path):
     assert r["start"] == "2026-10-30 19:45" and r["end"] == "2026-10-30 20:20"
 
 
+def test_title_comes_from_ai_title_record_and_is_shown_in_table(tmp_path, capsys):
+    proj = r"D:\課程\demo-project"
+    root = make_claude_dir(tmp_path, proj)
+    jl = next(root.rglob("11111111-aaaa.jsonl"))
+    with jl.open("a", encoding="utf-8") as f:
+        f.write(json.dumps({"type": "ai-title", "aiTitle": "舊標題", "sessionId": "11111111-aaaa"}, ensure_ascii=False) + "\n")
+        f.write(json.dumps({"type": "ai-title", "aiTitle": "範例專案的需求清單", "sessionId": "11111111-aaaa"}, ensure_ascii=False) + "\n")
+    assert fs.find_sessions(proj, root, None)[0]["title"] == "範例專案的需求清單"  # 取最後一筆
+    fs.main(["--project", proj, "--claude-dir", str(root)])
+    assert "範例專案的需求清單" in capsys.readouterr().out
+
+
+def test_missing_title_falls_back(tmp_path):
+    proj = r"D:\課程\demo-project"
+    root = make_claude_dir(tmp_path, proj)
+    assert fs.find_sessions(proj, root, None)[0]["title"] == "（無標題）"
+
+
 def test_cwd_matching_is_lenient(tmp_path):
     root = make_claude_dir(tmp_path, r"D:\課程\demo-project")
     for variant in ("d:/課程/demo-project", "D:\\課程\\demo-project\\", "D:\\課程\\DEMO-PROJECT"):

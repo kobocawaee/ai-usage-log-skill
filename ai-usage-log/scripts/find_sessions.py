@@ -29,17 +29,19 @@ def default_claude_dir() -> Path:
 
 def scan_file(path: Path) -> dict | None:
     """單趟掃描：cwd、起訖時間、人工輸入次數。檔案不是 UTF-8 JSONL 時回傳 None。"""
-    cwd = first = last = None
+    cwd = first = last = title = None
     humans = 0
     try:
         with path.open("r", encoding="utf-8") as f:
             for line in f:
-                if '"cwd"' not in line and '"timestamp"' not in line:
+                if '"cwd"' not in line and '"timestamp"' not in line and '"ai-title"' not in line:
                     continue
                 try:
                     o = json.loads(line)
                 except json.JSONDecodeError:
                     continue
+                if o.get("type") == "ai-title" and o.get("aiTitle"):
+                    title = o["aiTitle"]  # 與 VS Code 對話清單顯示的標題相同；取最後一筆
                 if cwd is None and o.get("cwd"):
                     cwd = o["cwd"]
                 if o.get("type") in ("user", "assistant") and not o.get("isSidechain") and o.get("timestamp"):
@@ -49,7 +51,7 @@ def scan_file(path: Path) -> dict | None:
                         humans += 1
     except (OSError, UnicodeDecodeError):
         return None
-    return {"cwd": cwd, "first": first, "last": last, "humans": humans}
+    return {"cwd": cwd, "first": first, "last": last, "humans": humans, "title": title}
 
 
 def _local(ts: str | None, tz: ZoneInfo) -> str:
@@ -80,6 +82,7 @@ def find_sessions(project: str, claude_dir: Path, state_path: Path | None, tz_na
             sid = jl.stem
             out.append({
                 "session_id": sid,
+                "title": info["title"] or "（無標題）",
                 "path": str(jl),
                 "start": _local(info["first"], tz),
                 "end": _local(info["last"], tz),
@@ -117,11 +120,11 @@ def main(argv=None) -> int:
     if not rows:
         print("找不到尚未處理的對話紀錄。（可加 --all 列出全部，或直接提供 .jsonl 路徑）")
         return 0
-    print("| # | session | 開始 | 結束 | 人工輸入 | 大小 | 狀態 |")
+    print("| # | 標題 | 開始 | 結束 | 人工輸入 | session | 狀態 |")
     print("| --- | --- | --- | --- | --- | --- | --- |")
     for i, r in enumerate(rows, 1):
-        print(f"| {i} | {r['session_id'][:8]} | {r['start']} | {r['end']} | {r['human_inputs']} | "
-              f"{r['size_kb']} KB | {'已處理' if r['processed'] else '未處理'} |")
+        print(f"| {i} | {r['title']} | {r['start']} | {r['end']} | {r['human_inputs']} | "
+              f"{r['session_id'][:8]} | {'已處理' if r['processed'] else '未處理'} |")
     return 0
 
 
