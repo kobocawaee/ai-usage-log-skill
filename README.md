@@ -104,7 +104,7 @@ python -m venv .venv
 
 ## 致謝
 
-紀錄表的欄位設計參考了同課程另一組的做法，特此感謝。
+紀錄表的欄位設計參考了同課程另一組的做法，感謝 [@Lavender0720](https://github.com/Lavender0720)。
 
 ## 授權
 
