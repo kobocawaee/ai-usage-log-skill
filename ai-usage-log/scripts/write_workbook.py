@@ -49,7 +49,7 @@ class WorkbookLocked(Exception):
 
 # ---------- 設定 ----------
 def load_config(path: Path) -> dict:
-    cfg = json.loads(Path(path).read_text(encoding="utf-8"))
+    cfg = json.loads(Path(path).read_text(encoding="utf-8-sig"))  # -sig：容忍記事本存檔的 BOM
     base = Path(path).resolve().parent
     cfg["_base"] = base
     cfg["_workbook"] = (base / cfg["workbook"]).resolve()
@@ -265,7 +265,7 @@ def main(argv=None) -> int:
     ap.add_argument("--config", required=True)
     a = ap.parse_args(argv)
     cfg = load_config(Path(a.config))
-    draft = json.loads(Path(a.draft).read_text(encoding="utf-8"))
+    draft = json.loads(Path(a.draft).read_text(encoding="utf-8-sig"))
     try:
         res = append_rows(draft, cfg)
     except WorkbookLocked as e:

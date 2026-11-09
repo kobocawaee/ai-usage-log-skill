@@ -47,6 +47,19 @@ Chromium 安裝失敗時也能跑，只是圖片會退回輸出 HTML。
 流程：讀設定檔（第一次會詢問並建立 `ai-usage-log.config.json`）→ 列出可處理的對話 → 解析 →
 **草擬紀錄表與圖片清單，在對話中請你確認** → 產生 xlsx、png、md → 回報待補項目。
 
+### 資料從哪來
+
+skill 讀的是 Claude Code 自動存在本機的對話紀錄（`~/.claude/projects/` 底下），**不需要你把對話複製貼上**。
+在 VS Code 擴充套件、終端機裡使用 Claude Code 都一樣會產生這些紀錄；關掉分頁也不會刪除。
+
+注意：Claude Code 預設只保留本機對話紀錄 30 天（設定 `cleanupPeriodDays` 可調整，
+見[官方設定文件](https://code.claude.com/docs/en/settings-reference)），過期的紀錄會被清除，請在期限內整理。
+
+### 圖片不會被覆蓋
+
+產生圖片時若目標資料夾已有同名檔案，程式會停下來並列出清單（結束碼 3），不會動任何檔案；
+確定要取代時才加 `--overwrite`，或改用不同的檔名前綴。
+
 ### 設定檔
 
 放在執行 skill 的專案根目錄，所有選項都從這裡讀：
@@ -57,6 +70,7 @@ Chromium 安裝失敗時也能跑，只是圖片會退回輸出 HTML。
   "member_name": "王小明",
   "members": ["成員1", "成員2", "成員3", "成員4"],
   "timezone": "Asia/Taipei",
+  "card_theme": "light",
   "output_dir": "ai-log",
   "image_dir": "ai-log/images",
   "workbook": "ai-log/G-AI使用紀錄-成員1.xlsx",
@@ -64,6 +78,8 @@ Chromium 安裝失敗時也能跑，只是圖片會退回輸出 HTML。
   "adoption_levels": ["直接採用", "小幅修改", "大幅修改", "僅參考", "不採用"]
 }
 ```
+
+`card_theme` 決定圖片配色：`light`（預設，淺色）或 `dark`（深色，版面完全相同，只換顏色）。
 
 ### 隱私
 

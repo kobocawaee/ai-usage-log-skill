@@ -1,7 +1,9 @@
 """把對話中的關鍵訊息排版成「卡片」圖片（SPEC 第 5 節）。
 
 用法：
-    python render_cards.py conversation.json cards.json out_dir [--html-only]
+    python render_cards.py conversation.json cards.json out_dir [--html-only] [--theme light|dark] [--overwrite]
+
+已有同名圖片時不會覆蓋，印出清單並回傳 3；確定要取代才加 --overwrite。
 
 conversation.json：parse_session.py 的輸出。
 cards.json：
@@ -85,8 +87,13 @@ def local_label(msg: dict) -> str:
     return msg.get("local", "")
 
 
-def build_card(conv: list[dict], meta: dict, card: dict) -> tuple[str, bool]:
+THEMES = ("light", "dark")
+
+
+def build_card(conv: list[dict], meta: dict, card: dict, theme: str = "light") -> tuple[str, bool]:
     """回傳 (完整 HTML, 是否有遮罩)。"""
+    if theme not in THEMES:
+        raise ValueError(f"未知的主題：{theme}（可用：{', '.join(THEMES)}）")
     if card["kind"] not in KIND_CLASS:
         raise ValueError(f"未知的類型標籤：{card['kind']}（可用：{', '.join(KIND_CLASS)}）")
     body, masked = "", False
@@ -102,6 +109,7 @@ def build_card(conv: list[dict], meta: dict, card: dict) -> tuple[str, bool]:
         foot += "　｜　已遮罩敏感資訊"
     page = TEMPLATE.read_text(encoding="utf-8")
     for key, val in {
+        "THEME": "dark" if theme == "dark" else "",
         "HEADER": header_html(meta["header"]),
         "NO": html.escape(card["no"]),
         "TITLE": html.escape(card["title"]),
@@ -126,12 +134,22 @@ def card_basename(meta: dict, card: dict) -> str:
     return f"{prefix}_{card['no']}"
 
 
-def render(conv_path, cards_path, out_dir, html_only: bool = False) -> dict:
-    conv = json.loads(Path(conv_path).read_text(encoding="utf-8"))["messages"]
-    meta = json.loads(Path(cards_path).read_text(encoding="utf-8"))
+class OverwriteError(Exception):
+    """目標資料夾已有同名圖片，且沒有指定 --overwrite。"""
+
+
+def render(conv_path, cards_path, out_dir, html_only: bool = False, theme: str = "light",
+           overwrite: bool = False) -> dict:
+    conv = json.loads(Path(conv_path).read_text(encoding="utf-8-sig"))["messages"]
+    meta = json.loads(Path(cards_path).read_text(encoding="utf-8-sig"))
     out = Path(out_dir)
+    pages = [(card_basename(meta, c), *build_card(conv, meta, c, theme)) for c in meta["cards"]]
+    ext = ".html" if html_only else ".png"
+    clash = [f"{n}{ext}" for n, _, _ in pages if (out / f"{n}{ext}").exists()]
+    if clash and not overwrite:
+        raise OverwriteError("以下檔案已存在，未覆蓋任何檔案：" + "、".join(clash)
+                             + "\n若確定要取代，請加上 --overwrite；否則請換一個 file_prefix。")
     out.mkdir(parents=True, exist_ok=True)
-    pages = [(card_basename(meta, c), *build_card(conv, meta, c)) for c in meta["cards"]]
 
     result = {"png": [], "html": [], "masked": [n for n, _, m in pages if m], "fallback": False}
     pw_ctx = None
@@ -175,8 +193,14 @@ def main(argv=None) -> int:
     ap.add_argument("cards")
     ap.add_argument("out_dir")
     ap.add_argument("--html-only", action="store_true")
+    ap.add_argument("--theme", choices=THEMES, default="light", help="卡片配色（預設 light）")
+    ap.add_argument("--overwrite", action="store_true", help="允許覆蓋已存在的同名圖片")
     a = ap.parse_args(argv)
-    r = render(a.conversation, a.cards, a.out_dir, a.html_only)
+    try:
+        r = render(a.conversation, a.cards, a.out_dir, a.html_only, a.theme, a.overwrite)
+    except OverwriteError as e:
+        print(e, file=sys.stderr)
+        return 3
     print(json.dumps(r, ensure_ascii=False, indent=2))
     return 0
 

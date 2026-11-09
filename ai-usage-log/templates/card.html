@@ -17,7 +17,18 @@ pre{background:#eef1f5;padding:8px 12px;border-radius:6px;overflow-wrap:anywhere
 h1,h2,h3,h4{font-size:15px}
 p{margin:6px 0}ul,ol{margin:4px 0;padding-left:22px}
 .foot{padding:0 22px 14px;font-size:12px;color:#7a8291}
-</style></head><body>
+/* 深色主題：只覆寫顏色，版面與淺色完全相同 */
+body.dark{background:#0d1117;color:#e6e9ef}
+.dark .card{background:#161b22}
+.dark .top{background:#0d1117;color:#c9d1d9;border-bottom:1px solid #30363d}
+.dark .no{color:#6cb0ff}
+.dark .tag.h{background:#4a2f17;color:#ffc58f}.dark .tag.a{background:#1b3556;color:#9ccaff}.dark .tag.i{background:#2a313c;color:#b4bcc9}
+.dark .msg.user{background:#2a2118;border:1px solid #5c4128}.dark .msg.assistant{background:#18202c;border:1px solid #2f4259}
+.dark .who{color:#9aa4b5}
+.dark th,.dark td{border:1px solid #3a424e}.dark th{background:#222a35}
+.dark code,.dark pre{background:#0d1117}
+.dark .foot{color:#8b94a3}
+</style></head><body class="{{THEME}}">
 <div class="card" id="c">
 <div class="top"><span>AI 使用紀錄節錄｜{{HEADER}}</span><span>由原始對話紀錄轉出，內容未修改</span></div>
 <div class="head"><span class="no">{{NO}}</span><span class="title">{{TITLE}}</span><span class="tag {{KIND_CLASS}}">{{KIND}}</span></div>

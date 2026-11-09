@@ -110,8 +110,8 @@ def build_transcript(conv: dict, meta: dict) -> tuple[str, bool]:
 
 
 def write_transcript(conv_path, cards_path, out_path) -> Path:
-    conv = json.loads(Path(conv_path).read_text(encoding="utf-8"))
-    meta = json.loads(Path(cards_path).read_text(encoding="utf-8"))
+    conv = json.loads(Path(conv_path).read_text(encoding="utf-8-sig"))
+    meta = json.loads(Path(cards_path).read_text(encoding="utf-8-sig"))
     md, _ = build_transcript(conv, meta)
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)

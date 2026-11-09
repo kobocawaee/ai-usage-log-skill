@@ -19,7 +19,7 @@ description: 把 Claude Code 的對話紀錄（.jsonl）整理成「AI 使用紀
 **`<proj>` 一律是目前的工作目錄（使用者開啟 Claude Code 的那個資料夾）。** 即使使用者提供的 `.jsonl` 路徑屬於別的專案，
 也**不可**改用那個專案當 `<proj>`：設定檔、輸出資料夾、工作檔、狀態檔全都只寫在目前的工作目錄之下，
 **不可寫入、修改或覆蓋 `.jsonl` 所屬專案裡的任何檔案**（那份紀錄只讀取）。
-動手寫入前，若 `<proj>` 底下已有同名的輸出檔（例如同樣前綴的 `.png`），要先告知使用者，不可直接覆蓋。
+圖片若已有同名檔，`render_cards.py` 會拒絕覆蓋（見第 6 步）；其他輸出檔若已存在同名，也要先告知使用者，不可直接覆蓋。
 所有路徑都以引號包住（路徑可能含中文與空白）。
 
 ## 0. 前置檢查
@@ -43,7 +43,7 @@ python "<skill>/scripts/setup_env.py"
 ```json
 {
   "member": "成員1", "member_name": "王小明", "members": ["成員1", "成員2"],
-  "timezone": "Asia/Taipei", "output_dir": "ai-log", "image_dir": "ai-log/images", "workbook": "ai-log/G-AI使用紀錄-成員1.xlsx",
+  "timezone": "Asia/Taipei", "card_theme": "light", "output_dir": "ai-log", "image_dir": "ai-log/images", "workbook": "ai-log/G-AI使用紀錄-成員1.xlsx",
   "activities": ["需求", "設計", "程式", "測試", "除錯", "審查", "文件", "管理"],
   "adoption_levels": ["直接採用", "小幅修改", "大幅修改", "僅參考", "不採用"]
 }
@@ -141,13 +141,16 @@ python "<skill>/scripts/setup_env.py"
 ## 6. 產出（確認後依序執行）
 
 ```
-"<py>" "<skill>/scripts/render_cards.py" "<work>/conversation.json" "<work>/cards.json" "<proj>/<image_dir>"
+"<py>" "<skill>/scripts/render_cards.py" "<work>/conversation.json" "<work>/cards.json" "<proj>/<image_dir>" --theme <card_theme>
 "<py>" "<skill>/scripts/write_transcript.py" "<work>/conversation.json" "<work>/cards.json" "<proj>/<output_dir>/<file_prefix>_對話紀錄.md"
 "<py>" "<skill>/scripts/write_workbook.py" "<work>/draft.json" --config "<proj>/ai-usage-log.config.json"
 ```
 
 - 圖片統一放在 `<proj>/<image_dir>`（預設 `ai-log/images/`）；文字紀錄與 xlsx 放在 `<output_dir>`。cards.json 的 `image_dir` 是「相對於文字紀錄」的圖片資料夾名稱。
 - 圖片與文字紀錄會自動遮罩敏感資訊（金鑰、email、家目錄、密碼）。
+- `<card_theme>` 取自設定檔的 `card_theme`（`light` 或 `dark`，沒寫就用 `light`）。
+- `render_cards.py` 回傳 3 表示目標資料夾已有同名圖片，**程式不會覆蓋**。把清單告訴使用者，問他要換 `file_prefix` 還是取代；
+  只有使用者明確同意取代，才在同一行後面加 `--overwrite` 重跑。
 - 找不到 Playwright/Chromium 時 `render_cards.py` 只輸出 HTML 並印出安裝指令，請轉告使用者。
 - `write_workbook.py` 回傳 2 表示 Excel 正開著該檔：請使用者關閉後，**只重跑這一行**（草稿已保留）。
 - 同一 session、時間重疊的列會自動略過，並在輸出中說明。
