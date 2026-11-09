@@ -30,6 +30,18 @@
 
 Chromium 安裝失敗時也能跑，只是圖片會退回輸出 HTML。
 
+### 快速上手（Windows）
+
+1. 確認電腦有 Python 3.10 以上：在終端機輸入 `python --version`（或 `py --version`）能看到版本即可。
+2. 到本頁按綠色的 **Code → Download ZIP** 並解壓縮（或用 GitHub Desktop clone）。
+3. 把解壓縮後**裡面的 `ai-usage-log` 資料夾**（不是整個 repo）複製到 `C:\Users\<你的使用者名稱>\.claude\skills\`，
+   完成後要能找到 `...\.claude\skills\ai-usage-log\SKILL.md`。
+   `.claude` 是隱藏資料夾，可在檔案總管網址列貼上 `%USERPROFILE%\.claude` 進入；沒有 `skills` 資料夾就自己建立。
+4. 在要記錄的專案開一個**新的** Claude Code 對話（舊對話不會載入新 skill），輸入 `/ai-usage-log`。
+5. 第一次會自動建立專用環境（一兩分鐘，請稍候），接著詢問你的**姓名**；之後會產生 `G-AI使用紀錄-<姓名>.xlsx`，每個人各自一份。
+
+輸入 `/ai-usage-log` 沒反應時，通常是資料夾多放了一層（變成 `skills\ai-usage-log\ai-usage-log\`），或是沒有開新對話。
+
 ## 使用
 
 在你要記錄的專案裡開 Claude Code，輸入：
