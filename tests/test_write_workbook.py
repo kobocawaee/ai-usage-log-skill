@@ -9,8 +9,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "ai-usage-log" /
 import write_workbook as ww  # noqa: E402
 
 CONFIG = {
-    "member": "成員1", "member_name": "王小明", "members": ["成員1", "成員2"], "timezone": "Asia/Taipei",
-    "output_dir": "ai-log", "workbook": "ai-log/G-AI使用紀錄-成員1.xlsx",
+    "member_name": "王小明", "timezone": "Asia/Taipei",
+    "output_dir": "ai-log", "workbook": "ai-log/G-AI使用紀錄-王小明.xlsx",
     "activities": ["需求", "設計", "程式"], "adoption_levels": ["直接採用", "小幅修改", "不採用"],
 }
 
@@ -42,13 +42,14 @@ def test_create_new_workbook_structure(cfg):
     ws = wb["紀錄表"]
     assert [x.value for x in ws[1]] == ww.HEADERS
     assert ws.freeze_panes == "A2"
-    assert ws["H2"].alignment.wrap_text
-    assert ws["B2"].value == "成員1" and ws["L2"].value == "abcd1234 19:45–20:19"
-    assert ws["J2"].value == "images/1030_範例_王小明_01.png\ndocs/prd.md"
-    assert ws["J2"].hyperlink.target == "images/1030_範例_王小明_01.png"  # 圖片在子資料夾 → 相對路徑
+    assert "成員" not in ww.HEADERS and len(ww.HEADERS) == 11
+    assert ws["G2"].alignment.wrap_text
+    assert ws["B2"].value == "需求" and ws["K2"].value == "abcd1234 19:45–20:19"
+    assert ws["I2"].value == "images/1030_範例_王小明_01.png\ndocs/prd.md"
+    assert ws["I2"].hyperlink.target == "images/1030_範例_王小明_01.png"  # 圖片在子資料夾 → 相對路徑
     opt = wb["選項"]
     assert [opt.cell(i, 1).value for i in (1, 2, 3, 4)] == ["軟工活動", "需求", "設計", "程式"]
-    assert opt["C3"].value == "成員2"
+    assert opt["C1"].value is None  # 不再有成員清單
     assert wb["說明"].max_row >= 8
 
 
@@ -56,9 +57,7 @@ def test_dropdowns_reference_options_sheet(cfg):
     c, _ = cfg
     ww.append_rows({"rows": [row()]}, c)
     dvs = {tuple(str(r) for r in dv.sqref.ranges): dv.formula1 for dv in load_workbook(c["_workbook"])["紀錄表"].data_validations.dataValidation}
-    assert dvs[("B2:B1000",)] == "'選項'!$C$2:$C$3"
-    assert dvs[("C2:C1000",)] == "'選項'!$A$2:$A$4"
-    assert dvs[("I2:I1000",)] == "'選項'!$B$2:$B$4"
+    assert dvs == {("B2:B1000",): "'選項'!$A$2:$A$4", ("H2:H1000",): "'選項'!$B$2:$B$4"}
 
 
 def test_append_keeps_existing_rows_and_dropdowns(cfg):
@@ -67,8 +66,8 @@ def test_append_keeps_existing_rows_and_dropdowns(cfg):
     res = ww.append_rows({"rows": [row(source="aaaaaaaa 10:00–10:30", task="第二筆")]}, c)
     assert res["added"] == 1
     ws = load_workbook(c["_workbook"])["紀錄表"]
-    assert ws.max_row == 3 and ws["D2"].value == "寫範例" and ws["D3"].value == "第二筆"
-    assert len(ws.data_validations.dataValidation) == 3
+    assert ws.max_row == 3 and ws["C2"].value == "寫範例" and ws["C3"].value == "第二筆"
+    assert len(ws.data_validations.dataValidation) == 2
 
 
 def test_dedupe_by_source_overlap(cfg):
@@ -137,7 +136,7 @@ def test_locked_workbook_reports_and_keeps_draft(cfg, tmp_path, monkeypatch, cap
     monkeypatch.undo()
     assert code == 2 and draft.exists()
     err = capsys.readouterr().err
-    assert "請先關閉 Excel 中的 G-AI使用紀錄-成員1.xlsx 再重試" in err
+    assert "請先關閉 Excel 中的 G-AI使用紀錄-王小明.xlsx 再重試" in err
     assert load_workbook(c["_workbook"])["紀錄表"].max_row == 2  # 沒有被改動
     assert ww.main([str(draft), "--config", str(cfgpath)]) == 0  # 關檔後只重跑這一步
     assert load_workbook(c["_workbook"])["紀錄表"].max_row == 3
@@ -154,7 +153,7 @@ def test_images_live_in_subfolder_and_link_is_relative(cfg):
     assert c["_image_dir"] == (c["_base"] / "ai-log" / "images").resolve()  # 預設 <output_dir>/images
     ww.append_rows({"rows": [row()]}, c)
     ws = load_workbook(c["_workbook"])["紀錄表"]
-    assert ws["J2"].hyperlink.target == "images/1030_範例_王小明_01.png"
+    assert ws["I2"].hyperlink.target == "images/1030_範例_王小明_01.png"
 
 
 def test_custom_image_dir(tmp_path):
@@ -162,4 +161,29 @@ def test_custom_image_dir(tmp_path):
     p.write_text(json.dumps({**CONFIG, "image_dir": "pics/cards"}, ensure_ascii=False), encoding="utf-8")
     c = ww.load_config(p)
     ww.append_rows({"rows": [row()]}, c)
-    assert load_workbook(c["_workbook"])["紀錄表"]["J2"].hyperlink.target == "../pics/cards/1030_範例_王小明_01.png"
+    assert load_workbook(c["_workbook"])["紀錄表"]["I2"].hyperlink.target == "../pics/cards/1030_範例_王小明_01.png"
+
+
+def test_workbook_name_defaults_to_member_name_and_old_keys_ignored(tmp_path):
+    p = tmp_path / "c.json"
+    p.write_text(json.dumps({"member": "成員1", "members": ["成員1"], "member_name": "阿翔",
+                             "activities": ["需求"], "adoption_levels": ["直接採用"]}, ensure_ascii=False),
+                 encoding="utf-8")
+    c = ww.load_config(p)
+    assert c["_workbook"].name == "G-AI使用紀錄-阿翔.xlsx"
+    assert ww.append_rows({"rows": [row(activity="需求", adoption="直接採用")]}, c)["added"] == 1
+
+
+def test_old_12_column_workbook_is_refused_not_corrupted(cfg):
+    from openpyxl import Workbook
+    c, _ = cfg
+    c["_workbook"].parent.mkdir(parents=True, exist_ok=True)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "紀錄表"
+    ws.append(["日期", "成員", "軟工活動"])
+    wb.save(c["_workbook"])
+    with pytest.raises(ValueError) as e:
+        ww.append_rows({"rows": [row()]}, c)
+    assert "欄位和目前版本不同" in str(e.value)
+    assert load_workbook(c["_workbook"])["紀錄表"].max_row == 1

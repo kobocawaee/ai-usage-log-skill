@@ -36,14 +36,17 @@ python "<skill>/scripts/setup_env.py"
 
 ## 1. 讀設定檔
 
-讀 `<proj>/ai-usage-log.config.json`。不存在就詢問：成員編號（例如「成員1」）、姓名、全組成員清單，
-其餘用預設建立（`timezone: Asia/Taipei`、`output_dir: ai-log`、`workbook: ai-log/G-AI使用紀錄-<成員編號>.xlsx`、
+讀 `<proj>/ai-usage-log.config.json`。不存在就**只問一件事：姓名**（例如「徐啟翔」，也可以是大家都認得的綽號），
+其餘用預設建立（`timezone: Asia/Taipei`、`output_dir: ai-log`、`workbook: ai-log/G-AI使用紀錄-<姓名>.xlsx`、
+**不需要成員編號，也不需要全組成員清單**：每個人在自己的電腦產生自己的 Excel，檔名帶姓名就能辨識；紀錄表沒有「成員」欄。
+姓名會用在檔名與圖片上的發言標籤，不可含 `\ / : * ? " < > |`。
+若設定檔裡有舊版的 `member`、`members` 欄位，直接忽略，不要再向使用者詢問。
 活動與採用程度清單見下）。範例：
 
 ```json
 {
-  "member": "成員1", "member_name": "王小明", "members": ["成員1", "成員2"],
-  "timezone": "Asia/Taipei", "card_theme": "light", "output_dir": "ai-log", "image_dir": "ai-log/images", "workbook": "ai-log/G-AI使用紀錄-成員1.xlsx",
+  "member_name": "王小明",
+  "timezone": "Asia/Taipei", "card_theme": "light", "output_dir": "ai-log", "image_dir": "ai-log/images", "workbook": "ai-log/G-AI使用紀錄-王小明.xlsx",
   "activities": ["需求", "設計", "程式", "測試", "除錯", "審查", "文件", "管理"],
   "adoption_levels": ["直接採用", "小幅修改", "大幅修改", "僅參考", "不採用"]
 }
@@ -158,7 +161,7 @@ python "<skill>/scripts/setup_env.py"
 ## 7. 自我檢查
 
 - 實際打開至少 2 張圖片看過：中文正常、數字與編號和原文一致（尤其「9. …」不可被改成 3.）。
-- 用 openpyxl 讀回 xlsx：列數正確、`紀錄表` 有 3 個下拉選單（成員、軟工活動、採用程度）。
+- 用 openpyxl 讀回 xlsx：列數正確、`紀錄表` 有 2 個下拉選單（軟工活動、採用程度）。
 - 有問題就修正後重跑該步驟。
 
 ## 8. 回報

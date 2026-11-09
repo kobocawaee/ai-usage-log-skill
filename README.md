@@ -66,18 +66,23 @@ skill 讀的是 Claude Code 自動存在本機的對話紀錄（`~/.claude/proje
 
 ```json
 {
-  "member": "成員1",
   "member_name": "王小明",
-  "members": ["成員1", "成員2", "成員3", "成員4"],
   "timezone": "Asia/Taipei",
   "card_theme": "light",
   "output_dir": "ai-log",
   "image_dir": "ai-log/images",
-  "workbook": "ai-log/G-AI使用紀錄-成員1.xlsx",
+  "workbook": "ai-log/G-AI使用紀錄-王小明.xlsx",
   "activities": ["需求", "設計", "程式", "測試", "除錯", "審查", "文件", "管理"],
   "adoption_levels": ["直接採用", "小幅修改", "大幅修改", "僅參考", "不採用"]
 }
 ```
+
+只需要姓名。每個人在自己的電腦產生自己的 Excel（檔名帶姓名），所以紀錄表沒有「成員」欄，
+也不需要成員編號或全組名單；舊版設定檔裡的 `member`、`members` 會被忽略。
+若手上有舊版（有「成員」欄）的 Excel，程式會拒絕寫入以免欄位錯位，請改名備份或換一個檔名。
+
+多人共用同一個專案 repo 時，`ai-usage-log.config.json` 與 `ai-log/.ai-usage-log-state.json` 是個人的，
+請加進 `.gitignore`，不要提交；否則別人 pull 後會沿用你的姓名與檔案。
 
 `card_theme` 決定圖片配色：`light`（預設，淺色）或 `dark`（深色，版面完全相同，只換顏色）。
 
