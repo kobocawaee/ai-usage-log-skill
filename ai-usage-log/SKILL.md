@@ -16,8 +16,19 @@ description: 把 Claude Code 的對話紀錄（.jsonl）整理成「AI 使用紀
 
 下文的 `<skill>` 指本檔所在資料夾（腳本在 `<skill>/scripts/`）。
 
-**`<proj>` 一律是目前的工作目錄（使用者開啟 Claude Code 的那個資料夾）。** 即使使用者提供的 `.jsonl` 路徑屬於別的專案，
-也**不可**改用那個專案當 `<proj>`：設定檔、輸出資料夾、工作檔、狀態檔全都只寫在目前的工作目錄之下，
+**`<proj>` 是「目前工作目錄所在的 git 專案根目錄」，不是使用者剛好開啟的那一層資料夾。** 先執行：
+
+```
+git -C "<目前工作目錄>" rev-parse --show-toplevel
+```
+
+有輸出就用它當 `<proj>`；失敗（不在 git 專案裡、或沒有安裝 git）就用目前工作目錄。
+這樣不論從專案的哪一層開啟 Claude Code，`ai-usage-log.config.json` 與 `ai-log/` 都會落在同一個位置。
+決定 `<proj>` 後要告訴使用者「輸出會放在 `<proj>`」，讓他確認位置正確。
+若目前工作目錄（不是根目錄）底下已有舊的 `ai-usage-log.config.json` 或 `ai-log/`，先告知使用者並詢問要沿用哪一個，
+不要自行合併或搬動；沒有指示時，以 git 根目錄為準。
+即使使用者提供的 `.jsonl` 路徑屬於別的專案，
+也**不可**改用那個專案當 `<proj>`：設定檔、輸出資料夾、工作檔、狀態檔全都只寫在 `<proj>` 之下，
 **不可寫入、修改或覆蓋 `.jsonl` 所屬專案裡的任何檔案**（那份紀錄只讀取）。
 圖片若已有同名檔，`render_cards.py` 會拒絕覆蓋（見第 6 步）；其他輸出檔若已存在同名，也要先告知使用者，不可直接覆蓋。
 所有路徑都以引號包住（路徑可能含中文與空白）。
@@ -36,8 +47,15 @@ python "<skill>/scripts/setup_env.py"
 
 ## 1. 讀設定檔
 
-讀 `<proj>/ai-usage-log.config.json`。不存在就**只問一件事：姓名**（例如「徐啟翔」，也可以是大家都認得的綽號），
-其餘用預設建立（`timezone: Asia/Taipei`、`output_dir: ai-log`、`workbook: ai-log/G-AI使用紀錄-<姓名>.xlsx`、
+讀 `<proj>/ai-usage-log.config.json`。不存在就**只問兩件事**：
+
+1. **姓名**（例如「徐啟翔」，也可以是大家都認得的綽號）。
+2. **產出資料夾要放在哪裡**。先列出你判斷的預設（`<proj>/ai-log`，`<proj>` 是上面找到的 git 根目錄），
+   請使用者確認或改成別的資料夾（例如 `sports-center/ai-log`）。團隊共用同一個 repo 時，請大家填**相同的資料夾**。
+   使用者的答案寫進設定檔的 `output_dir`（相對於 `<proj>` 的路徑，`image_dir`、`workbook` 跟著用它）。
+   設定檔本身一律放在 `<proj>`，之後每次執行讀到設定檔就直接沿用，不再詢問。
+
+其餘用預設建立（`timezone: Asia/Taipei`、`output_dir` 用使用者的答案（預設 `ai-log`）、`workbook: <output_dir>/G-AI使用紀錄-<姓名>.xlsx`、
 **不需要成員編號，也不需要全組成員清單**：每個人在自己的電腦產生自己的 Excel，檔名帶姓名就能辨識；紀錄表沒有「成員」欄。
 姓名會用在檔名與圖片上的發言標籤，不可含 `\ / : * ? " < > |`。
 若設定檔裡有舊版的 `member`、`members` 欄位，直接忽略，不要再向使用者詢問。
@@ -52,7 +70,14 @@ python "<skill>/scripts/setup_env.py"
 }
 ```
 
-首次建立時提醒：建議在 `.gitignore` 加入原始 `.jsonl`、`ai-log/.draft/`，只提交 `.xlsx`、`.png`、`.md`。
+每次讀完／建立設定檔後，執行下面這行，把個人檔案（設定檔、進度檔、草稿資料夾）自動加進 `<proj>/.gitignore`
+（沒有就建立；已有的不重複加；只在結尾追加一個區塊，不動既有內容；可重複執行）：
+
+```
+"<py>" "<skill>/scripts/ensure_gitignore.py" --project "<proj>" --output-dir "<output_dir>"
+```
+
+把它印出的結果（新增了哪幾行，或「已是最新」）告訴使用者。要提交到 repo 的是 `.xlsx`、`.png`、`.md`；原始 `.jsonl` 不在專案裡，不需要處理。
 工作檔（conversation.json、草稿）放在 `<proj>/<output_dir>/.draft/<session前8碼>/`。
 
 ## 2. 選擇對話
