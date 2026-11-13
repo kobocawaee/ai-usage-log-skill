@@ -20,27 +20,61 @@
 裝好 openpyxl、markdown-it-py、playwright、tzdata 與 Chromium（約一兩分鐘），不會動到系統的 Python。
 可用環境變數 `AI_USAGE_LOG_VENV` 改位置；也可手動執行 `python ai-usage-log/scripts/setup_env.py` 預先準備。
 
-把 `ai-usage-log/` 資料夾複製到使用者層級的 skills 目錄（所有專案都能用，也不會進到任何專案的 repo）：
+推薦用 **clone** 安裝：之後更新只要 `git pull`，不必重新複製。skill 會安裝在使用者層級的 skills 目錄
+（所有專案都能用，也不會進到任何專案的 repo）。
 
-- Windows：`%USERPROFILE%\.claude\skills\ai-usage-log\`
-- macOS／Linux：`~/.claude/skills/ai-usage-log/`
+### Windows
 
-也可以放在單一專案的 `.claude/skills/` 底下。開發時在 Windows 可執行 `scripts/install.ps1`，
-它會建立目錄連接，改程式後不必重新複製。
+1. 確認有 Python 3.10 以上：在終端機輸入 `python --version`（或 `py --version`）能看到版本即可。
+2. 把本 repo clone 到**專案資料夾以外**的位置（例如 `D:\tools\`），不要放進你要記錄的專案裡面：
+
+   ```bash
+   git clone https://github.com/kobocawaee/ai-usage-log-skill.git
+   ```
+
+   不熟指令的話，用 GitHub Desktop：File → Clone repository → URL，貼上上面的網址即可。
+3. 在 clone 下來的資料夾執行安裝腳本（不需要系統管理員權限），它會把 `ai-usage-log/` 以目錄連接放進
+   `%USERPROFILE%\.claude\skills\`：
+
+   ```bash
+   powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+   ```
+
+   看到「已建立連接：…\.claude\skills\ai-usage-log -> …」就完成了。
+   若先前是用「複製資料夾」的方式安裝，腳本會拒絕執行，請先刪掉 `%USERPROFILE%\.claude\skills\ai-usage-log` 再重跑。
+4. 在要記錄的專案開一個**新的** Claude Code 對話（舊對話不會載入新 skill），輸入 `/ai-usage-log`。
+
+### macOS／Linux
+
+clone 後建立符號連結：
+
+```bash
+git clone https://github.com/kobocawaee/ai-usage-log-skill.git
+mkdir -p ~/.claude/skills
+ln -s "$(pwd)/ai-usage-log-skill/ai-usage-log" ~/.claude/skills/ai-usage-log
+```
+
+### 更新
+
+在 clone 下來的資料夾執行 `git pull`（GitHub Desktop：Fetch origin → Pull origin）。因為是連結，拉完立刻生效，
+開新的 Claude Code 對話即可。
+
+### 不想用 git 的做法
+
+按 **Code → Download ZIP** 解壓縮，把裡面的 `ai-usage-log/` 資料夾複製到
+`%USERPROFILE%\.claude\skills\ai-usage-log\`（macOS／Linux 為 `~/.claude/skills/ai-usage-log/`），
+完成後要能找到 `...\skills\ai-usage-log\SKILL.md`。這種方式之後更新要重新下載並覆蓋。
+也可以放在單一專案的 `.claude/skills/` 底下。
+
+### 第一次使用
+
+第一次執行會自動建立專用環境（一兩分鐘，請稍候），接著詢問你的**姓名**；ai-log 資料夾專案裡已有就直接使用，
+沒有才會問位置。之後會產生 `G-AI使用紀錄-<姓名>.xlsx`，每個人各自一份。
+
+輸入 `/ai-usage-log` 沒反應時，通常是沒有開**新的**對話，或（複製安裝時）資料夾多放了一層
+（變成 `skills\ai-usage-log\ai-usage-log\`）。
 
 Chromium 安裝失敗時也能跑，只是圖片會退回輸出 HTML。
-
-### 快速上手（Windows）
-
-1. 確認電腦有 Python 3.10 以上：在終端機輸入 `python --version`（或 `py --version`）能看到版本即可。
-2. 到本頁按綠色的 **Code → Download ZIP** 並解壓縮（或用 GitHub Desktop clone）。
-3. 把解壓縮後**裡面的 `ai-usage-log` 資料夾**（不是整個 repo）複製到 `C:\Users\<你的使用者名稱>\.claude\skills\`，
-   完成後要能找到 `...\.claude\skills\ai-usage-log\SKILL.md`。
-   `.claude` 是隱藏資料夾，可在檔案總管網址列貼上 `%USERPROFILE%\.claude` 進入；沒有 `skills` 資料夾就自己建立。
-4. 在要記錄的專案開一個**新的** Claude Code 對話（舊對話不會載入新 skill），輸入 `/ai-usage-log`。
-5. 第一次會自動建立專用環境（一兩分鐘，請稍候），接著詢問你的**姓名**；之後會產生 `G-AI使用紀錄-<姓名>.xlsx`，每個人各自一份。
-
-輸入 `/ai-usage-log` 沒反應時，通常是資料夾多放了一層（變成 `skills\ai-usage-log\ai-usage-log\`），或是沒有開新對話。
 
 ## 使用
 
