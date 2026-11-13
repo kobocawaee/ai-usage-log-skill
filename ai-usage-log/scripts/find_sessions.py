@@ -18,6 +18,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from parse_session import _text_blocks, clean_text  # noqa: E402
+
 
 def norm(p: str) -> str:
     return os.path.normcase(os.path.normpath(str(p))).replace("\\", "/").rstrip("/")
@@ -27,9 +30,18 @@ def default_claude_dir() -> Path:
     return Path(os.path.expanduser("~")) / ".claude" / "projects"
 
 
+SNIPPET_LEN = 30
+
+
+def snippet(text: str, limit: int = SNIPPET_LEN) -> str:
+    """把第一句人工輸入壓成一行短摘要（沒有標題的對話用它辨認）。"""
+    one = " ".join(clean_text(text).split())
+    return one if len(one) <= limit else one[:limit].rstrip() + "…"
+
+
 def scan_file(path: Path) -> dict | None:
-    """單趟掃描：cwd、起訖時間、人工輸入次數。檔案不是 UTF-8 JSONL 時回傳 None。"""
-    cwd = first = last = title = None
+    """單趟掃描：cwd、起訖時間、人工輸入次數、第一句人工輸入。檔案不是 UTF-8 JSONL 時回傳 None。"""
+    cwd = first = last = title = first_input = None
     humans = 0
     try:
         with path.open("r", encoding="utf-8") as f:
@@ -49,9 +61,13 @@ def scan_file(path: Path) -> dict | None:
                     last = o["timestamp"]
                     if o["type"] == "user" and (o.get("origin") or {}).get("kind") == "human":
                         humans += 1
+                        if first_input is None:
+                            raw = "\n".join(_text_blocks((o.get("message") or {}).get("content")))
+                            first_input = snippet(raw) or None
     except (OSError, UnicodeDecodeError):
         return None
-    return {"cwd": cwd, "first": first, "last": last, "humans": humans, "title": title}
+    return {"cwd": cwd, "first": first, "last": last, "humans": humans, "title": title,
+            "first_input": first_input}
 
 
 def _local(ts: str | None, tz: ZoneInfo) -> str:
@@ -82,7 +98,8 @@ def find_sessions(project: str, claude_dir: Path, state_path: Path | None, tz_na
             sid = jl.stem
             out.append({
                 "session_id": sid,
-                "title": info["title"] or "（無標題）",
+                "title": info["title"] or (f"（無標題）{info['first_input']}" if info["first_input"] else "（無標題）"),
+                "first_input": info["first_input"] or "",
                 "path": str(jl),
                 "start": _local(info["first"], tz),
                 "end": _local(info["last"], tz),

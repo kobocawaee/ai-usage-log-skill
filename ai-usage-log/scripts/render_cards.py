@@ -90,7 +90,10 @@ def local_label(msg: dict) -> str:
 THEMES = ("light", "dark")
 
 
-def build_card(conv: list[dict], meta: dict, card: dict, theme: str = "light") -> tuple[str, bool]:
+DEFAULT_THEME = "dark"
+
+
+def build_card(conv: list[dict], meta: dict, card: dict, theme: str = DEFAULT_THEME) -> tuple[str, bool]:
     """回傳 (完整 HTML, 是否有遮罩)。"""
     if theme not in THEMES:
         raise ValueError(f"未知的主題：{theme}（可用：{', '.join(THEMES)}）")
@@ -138,7 +141,7 @@ class OverwriteError(Exception):
     """目標資料夾已有同名圖片，且沒有指定 --overwrite。"""
 
 
-def render(conv_path, cards_path, out_dir, html_only: bool = False, theme: str = "light",
+def render(conv_path, cards_path, out_dir, html_only: bool = False, theme: str = DEFAULT_THEME,
            overwrite: bool = False) -> dict:
     conv = json.loads(Path(conv_path).read_text(encoding="utf-8-sig"))["messages"]
     meta = json.loads(Path(cards_path).read_text(encoding="utf-8-sig"))
@@ -193,7 +196,7 @@ def main(argv=None) -> int:
     ap.add_argument("cards")
     ap.add_argument("out_dir")
     ap.add_argument("--html-only", action="store_true")
-    ap.add_argument("--theme", choices=THEMES, default="light", help="卡片配色（預設 light）")
+    ap.add_argument("--theme", choices=THEMES, default=DEFAULT_THEME, help="卡片配色（預設 dark）")
     ap.add_argument("--overwrite", action="store_true", help="允許覆蓋已存在的同名圖片")
     a = ap.parse_args(argv)
     try:

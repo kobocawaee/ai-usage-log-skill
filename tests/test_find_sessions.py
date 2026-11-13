@@ -47,9 +47,28 @@ def test_title_comes_from_ai_title_record_and_is_shown_in_table(tmp_path, capsys
     assert "範例專案的需求清單" in capsys.readouterr().out
 
 
-def test_missing_title_falls_back(tmp_path):
+def test_missing_title_falls_back_to_first_human_input(tmp_path, capsys):
     proj = r"D:\課程\demo-project"
     root = make_claude_dir(tmp_path, proj)
+    r = fs.find_sessions(proj, root, None)[0]
+    # 第一句是斜線指令：保留「/指令 參數」，不留 XML 標記
+    assert r["first_input"] == "/demo-skill 寫一份範例需求"
+    assert r["title"] == "（無標題）/demo-skill 寫一份範例需求"
+    fs.main(["--project", proj, "--claude-dir", str(root)])
+    assert "/demo-skill 寫一份範例需求" in capsys.readouterr().out
+
+
+def test_snippet_is_one_line_and_truncated():
+    s = fs.snippet("第一行\n第二行 " + "字" * 100)
+    assert "\n" not in s and s.endswith("…") and len(s) <= fs.SNIPPET_LEN + 1
+
+
+def test_no_title_and_no_text_shows_plain_placeholder(tmp_path):
+    proj = r"D:\課程\demo-project"
+    root = make_claude_dir(tmp_path, proj)
+    jl = next(root.rglob("11111111-aaaa.jsonl"))
+    lines = [l for l in jl.read_text(encoding="utf-8").splitlines() if '"origin"' not in l]
+    jl.write_text("\n".join(lines) + "\n", encoding="utf-8")
     assert fs.find_sessions(proj, root, None)[0]["title"] == "（無標題）"
 
 

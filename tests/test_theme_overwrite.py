@@ -28,10 +28,10 @@ def test_json_with_bom_is_accepted(tmp_path):
     assert rc.main([str(c), str(k), str(out), "--html-only"]) == 0
 
 
-def test_light_is_default_and_dark_adds_class():
+def test_dark_is_default_and_light_has_no_class():
     card = META["cards"][0]
-    assert '<body class="">' in rc.build_card(CONV, META, card)[0]
-    assert '<body class="dark">' in rc.build_card(CONV, META, card, "dark")[0]
+    assert '<body class="dark">' in rc.build_card(CONV, META, card)[0]
+    assert '<body class="">' in rc.build_card(CONV, META, card, "light")[0]
 
 
 def test_unknown_theme_rejected():

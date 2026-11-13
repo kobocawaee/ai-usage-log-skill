@@ -76,8 +76,14 @@ skill 讀的是 Claude Code 自動存在本機的對話紀錄（`~/.claude/proje
 
 skill 會以目前工作目錄所在的 **git 專案根目錄**為基準（用 `git rev-parse --show-toplevel` 找）；
 不在 git 專案裡就用目前的工作目錄。所以不論從專案的哪一層資料夾開啟 Claude Code，
-設定檔都會放在同一個位置。第一次執行時 skill 會問你**產出資料夾要放哪裡**（預設是專案根目錄下的 `ai-log`），
-答案寫進設定檔的 `output_dir`，之後就沿用不再詢問。團隊共用同一個 repo 時，請大家填相同的資料夾。
+設定檔都會放在同一個位置。每次執行時 skill 會先找專案裡有沒有名為 `ai-log` 的資料夾：
+
+- 只有一個 → 直接使用，不再詢問。
+- 有多個 → 請你選一個。
+- 一個都沒有 → 問你要在哪裡建立（預設是專案根目錄下的 `ai-log`）。
+
+選定的位置會寫進設定檔的 `output_dir`。團隊共用同一個 repo 時，請大家使用相同的資料夾。
+決定好之後，個人檔案（設定檔、進度檔、草稿）會自動加進 `.gitignore`。
 
 ### 設定檔
 
@@ -87,7 +93,7 @@ skill 會以目前工作目錄所在的 **git 專案根目錄**為基準（用 `
 {
   "member_name": "王小明",
   "timezone": "Asia/Taipei",
-  "card_theme": "light",
+  "card_theme": "dark",
   "output_dir": "ai-log",
   "image_dir": "ai-log/images",
   "workbook": "ai-log/G-AI使用紀錄-王小明.xlsx",
@@ -104,7 +110,7 @@ skill 會以目前工作目錄所在的 **git 專案根目錄**為基準（用 `
 不應該提交，否則別人 pull 後會沿用你的姓名與檔案。skill 每次執行都會自動把它們（以及 `ai-log/.draft/`）
 追加到專案的 `.gitignore`（只在結尾加一個區塊、不重複、不動你原有的內容）。
 
-`card_theme` 決定圖片配色：`light`（預設，淺色）或 `dark`（深色，版面完全相同，只換顏色）。
+`card_theme` 決定圖片配色：`dark`（預設，深色）或 `light`（淺色，版面完全相同，只換顏色）。
 
 ### 隱私
 

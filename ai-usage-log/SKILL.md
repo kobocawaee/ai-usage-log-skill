@@ -47,15 +47,32 @@ python "<skill>/scripts/setup_env.py"
 
 ## 1. 讀設定檔
 
-讀 `<proj>/ai-usage-log.config.json`。不存在就**只問兩件事**：
+### 1.1 決定產出資料夾 `<output_dir>`（每次執行都先做）
 
-1. **姓名**（例如「徐啟翔」，也可以是大家都認得的綽號）。
-2. **產出資料夾要放在哪裡**。先列出你判斷的預設（`<proj>/ai-log`，`<proj>` 是上面找到的 git 根目錄），
-   請使用者確認或改成別的資料夾（例如 `sports-center/ai-log`）。團隊共用同一個 repo 時，請大家填**相同的資料夾**。
-   使用者的答案寫進設定檔的 `output_dir`（相對於 `<proj>` 的路徑，`image_dir`、`workbook` 跟著用它）。
-   設定檔本身一律放在 `<proj>`，之後每次執行讀到設定檔就直接沿用，不再詢問。
+先找專案裡有沒有名為 `ai-log` 的資料夾：
 
-其餘用預設建立（`timezone: Asia/Taipei`、`output_dir` 用使用者的答案（預設 `ai-log`）、`workbook: <output_dir>/G-AI使用紀錄-<姓名>.xlsx`、
+```
+"<py>" "<skill>/scripts/find_ai_log.py" --project "<proj>"
+```
+
+它輸出 `{"found": [...]}`（路徑相對於 `<proj>`）。依序判斷：
+
+1. 設定檔已有 `output_dir`，而且那個資料夾**存在** → 直接用，不要問。
+2. 否則看 `found`：
+   - **剛好一個** → 直接用，並告訴使用者「使用既有的 `<路徑>`」，不要問。
+   - **有多個** → 列出來請使用者選一個（團隊共用同一個 repo 時，請大家選同一個）。
+   - **沒有** → 問使用者**要在哪裡產生 `ai-log`**，先列出預設（`<proj>/ai-log`），讓他確認或改成別的位置
+     （例如 `sports-center/ai-log`）；確認後建立該資料夾。
+3. 決定後，把 `output_dir`（相對於 `<proj>`）寫進設定檔，`image_dir` 與 `workbook` 跟著改成
+   `<output_dir>/images`、`<output_dir>/G-AI使用紀錄-<姓名>.xlsx`（使用者自訂過的值不要覆蓋）。
+   若設定檔原本的 `output_dir` 資料夾已被刪除，就當作「還沒決定」，從上面第 2 點重來並更新設定檔。
+
+### 1.2 設定檔
+
+讀 `<proj>/ai-usage-log.config.json`（設定檔一律放在 `<proj>`）。不存在就問**姓名**
+（例如「徐啟翔」，也可以是大家都認得的綽號），連同 1.1 決定的資料夾一起建立。
+
+其餘用預設建立（`timezone: Asia/Taipei`、`output_dir` 用 1.1 的結果、`workbook: <output_dir>/G-AI使用紀錄-<姓名>.xlsx`、
 **不需要成員編號，也不需要全組成員清單**：每個人在自己的電腦產生自己的 Excel，檔名帶姓名就能辨識；紀錄表沒有「成員」欄。
 姓名會用在檔名與圖片上的發言標籤，不可含 `\ / : * ? " < > |`。
 若設定檔裡有舊版的 `member`、`members` 欄位，直接忽略，不要再向使用者詢問。
@@ -64,13 +81,15 @@ python "<skill>/scripts/setup_env.py"
 ```json
 {
   "member_name": "王小明",
-  "timezone": "Asia/Taipei", "card_theme": "light", "output_dir": "ai-log", "image_dir": "ai-log/images", "workbook": "ai-log/G-AI使用紀錄-王小明.xlsx",
+  "timezone": "Asia/Taipei", "card_theme": "dark", "output_dir": "ai-log", "image_dir": "ai-log/images", "workbook": "ai-log/G-AI使用紀錄-王小明.xlsx",
   "activities": ["需求", "設計", "程式", "測試", "除錯", "審查", "文件", "管理"],
   "adoption_levels": ["直接採用", "小幅修改", "大幅修改", "僅參考", "不採用"]
 }
 ```
 
-每次讀完／建立設定檔後，執行下面這行，把個人檔案（設定檔、進度檔、草稿資料夾）自動加進 `<proj>/.gitignore`
+### 1.3 自動忽略個人檔案
+
+每次決定好資料夾、讀完／建立設定檔後，執行下面這行，把個人檔案（設定檔、進度檔、草稿資料夾）自動加進 `<proj>/.gitignore`
 （沒有就建立；已有的不重複加；只在結尾追加一個區塊，不動既有內容；可重複執行）：
 
 ```
@@ -92,6 +111,8 @@ python "<skill>/scripts/setup_env.py"
 
 **給使用者選的時候，主要顯示「標題」**（和 VS Code 對話清單看到的名稱相同），再附日期；
 不要只寫 session 編號或「N 次人工輸入」，一般人看不懂。例如：「Sports-center PRD 的 Epic 與 Story 清單（11/3）」。
+沒有標題的對話，標題欄會是「（無標題）」加上**第一句人工輸入的前 30 字**（斜線指令會顯示成 `/指令 參數`），
+照這段文字呈現給使用者辨認，不要只寫「（無標題）」。
 **排除目前這個對話本身**（標題通常像「/ai-usage-log …」、時間是現在），它是在執行本 skill，不是要記錄的內容。
 若使用者想整理的對話沒出現在清單，請他說出對話的標題或大約日期，不要讓他猜編號。
 
@@ -181,7 +202,7 @@ python "<skill>/scripts/setup_env.py"
 
 - 圖片統一放在 `<proj>/<image_dir>`（預設 `ai-log/images/`）；文字紀錄與 xlsx 放在 `<output_dir>`。cards.json 的 `image_dir` 是「相對於文字紀錄」的圖片資料夾名稱。
 - 圖片與文字紀錄會自動遮罩敏感資訊（金鑰、email、家目錄、密碼）。
-- `<card_theme>` 取自設定檔的 `card_theme`（`light` 或 `dark`，沒寫就用 `light`）。
+- `<card_theme>` 取自設定檔的 `card_theme`（`dark` 或 `light`，沒寫就用 `dark`）。
 - `render_cards.py` 回傳 3 表示目標資料夾已有同名圖片，**程式不會覆蓋**。把清單告訴使用者，問他要換 `file_prefix` 還是取代；
   只有使用者明確同意取代，才在同一行後面加 `--overwrite` 重跑。
 - 找不到 Playwright/Chromium 時 `render_cards.py` 只輸出 HTML 並印出安裝指令，請轉告使用者。
